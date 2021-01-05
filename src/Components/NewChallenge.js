@@ -85,11 +85,9 @@ const NewChallenge = props => {
     let challengeEntranceFee = entranceFeeRef.current.value
 
     console.log(`Title ${titleName} type:${challengeType} end condition:${challengeEndCondition} the Entrance Fee:${challengeEntranceFee} `)
-    await window.contract.addToChallengeMap({ title: String(titleName), type: challengeType, endCondition: challengeEndCondition, entranceFee: challengeEntranceFee, challengeStatus: 'active' })
-   
+    await window.contract.addToChallengeMap({ title: String(titleName), type: challengeType, endCondition: challengeEndCondition, entranceFee: challengeEntranceFee, challengeStatus: 'pending',privateOrPublic:publicOrPrivate })
 
   }
-
 
 
   const sendToBlockChain = async () => {
@@ -123,6 +121,7 @@ const NewChallenge = props => {
       return alert('I mean you must know someone to play with you')
     }
 
+     console.log(Title)
     await window.contract.addToOwnerMap({title:Title})
     await createAndPushChallengeArray(Title);
     await window.contract.addToPrivateParty({title:Title,participants:removeSpaces})
@@ -174,6 +173,7 @@ const NewChallenge = props => {
           <option>Solo Kills</option>
           <option>Victories</option>
           <option>Medals</option>
+          <option>eliminations</option>
         </Form.Control>
       </Form.Group>
 
@@ -212,7 +212,18 @@ const NewChallenge = props => {
                 type="text"
                 placeholder='Enter Value'>
               </Form.Control>
-            </Form.Group> : null
+            </Form.Group> : (gameSetting === "eliminations") ?
+            <Form.Group>
+              <Form.Label>Eliminations to Win</Form.Label>
+              <Form.Control
+                onChange={() => {
+                  changeDateValue(pointRef.current.value)
+                }}
+                ref={pointRef}
+                type="text"
+                placeholder='Enter Value'>
+              </Form.Control>
+            </Form.Group>: null
       }
 
 
@@ -274,6 +285,8 @@ const NewChallenge = props => {
       <Container>
         <Row className="d-flex justify-content-center">
           <Button disabled={submitStatus} onClick={() => { sendToBlockChain() }}>Submit</Button>
+          <Button > Send to User </Button>
+          <Button>Send to Contract</Button> 
 
         </Row>
       </Container>

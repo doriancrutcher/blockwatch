@@ -51018,18 +51018,25 @@ async function initContract() {
     deps: {
       keyStore: new _nearApiJs.keyStores.BrowserLocalStorageKeyStore()
     }
-  }, nearConfig)); // Initializing Wallet based Account. It can work with NEAR testnet wallet that
+  }, nearConfig));
+  window.nearConfig = nearConfig; // Initializing Wallet based Account. It can work with NEAR testnet wallet that
   // is hosted at https://wallet.testnet.near.org
 
   window.walletConnection = new _nearApiJs.WalletConnection(near); // Getting the Account ID. If still unauthorized, it's just empty string
 
-  window.accountId = window.walletConnection.getAccountId(); // Initializing our contract APIs by contract name and configuration
+  window.accountId = window.walletConnection.getAccountId();
+  window.utils = _nearApiJs.utils;
+  window.env = _nearApiJs.env; // Setting up Account 
+
+  window.account = new _nearApiJs.Account(near.connection, accountId);
+  window.contractAccount = new _nearApiJs.Account(near.connection, 'dev-1606168878874-1645702');
+  window.keyStore = _nearApiJs.keyStores; // Initializing our contract APIs by contract name and configuration
 
   window.contract = await new _nearApiJs.Contract(window.walletConnection.account(), nearConfig.contractName, {
     // View methods are read only. They don't modify the state, but usually return some value.
-    viewMethods: ['CheckTags', 'getTwitchHandle', 'getBattleTags', 'sayHi', 'getChallengerChallenges', 'getChallengeDetails', 'getOwnersChallenges'],
+    viewMethods: ['getChallengeWinnerName', 'retreiveTokenAmount', 'getParticipantCountMembers', 'getParticipantCount', 'getEscrowAccountVal', 'CheckTags', 'getTwitchHandle', 'getBattleTags', 'sayHi', 'getChallengerChallenges', 'getChallengeDetails', 'getOwnersChallenges', 'getParticipantList'],
     // Change methods can modify the state. But you don't receive the returned value when called.
-    changeMethods: ['setTwitch', 'setTag', 'addToChallengeIds', 'addToChallengeMap', 'addToChallengerMap', 'addToPrivateParty', 'getChallengeLength', 'addToOwnerMap']
+    changeMethods: ['addToChallengeWinners', 'sendWatchTokens', 'removeWatchTokens', 'addWatchTokens', 'cancelChallenge', 'addToParticipantCount', 'activateChallenge', 'addToAcceptedChallenges', 'checkAcceptedChallenges', 'addToEscrowAccount', 'removeFromChallengerList', 'removeChallenges', 'getStartedChallengeStats', 'startChallenge', 'setTwitch', 'setTag', 'addToChallengeIds', 'addToChallengeMap', 'updateParticipantStatus', 'addToChallengerMap', 'addToPrivateParty', 'getChallengeLength', 'addToOwnerMap', 'setInitParticipantStatus', 'getParticipantStatus']
   });
 }
 
@@ -51044,7 +51051,7 @@ function login() {
   // user's behalf.
   // This works by creating a new access key for the user's account and storing
   // the private key in localStorage.
-  window.walletConnection.requestSignIn(nearConfig.contractName);
+  window.walletConnection.requestSignIn('');
 }
 },{"near-api-js":"../node_modules/near-api-js/lib/browser-index.js","./config":"config.js"}],"../node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
@@ -72546,7 +72553,7 @@ const TwitchViewHome = props => {
   const [games, setGames] = (0, _react.useState)();
   const [participants, changeParticipants] = (0, _react.useState)(['emongg', 'jake_ow']);
   const [streamer, changeSteamer] = (0, _react.useState)(participants[0]);
-  const [channel, changeChannel] = (0, _react.useState)(0);
+  const [channel, changeChannel] = (0, _react.useState)(1);
   const streams = participants.map((x, index) => {
     return /*#__PURE__*/_react.default.createElement(_reactTwitchEmbed.TwitchPlayer, {
       channel: streamer,
@@ -72573,8 +72580,10 @@ const TwitchViewHome = props => {
     className: "d-flex justify-content-center"
   }, /*#__PURE__*/_react.default.createElement("h1", null, "Featured Match")), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Row, {
     className: "d-flex justify-content-center"
-  }, /*#__PURE__*/_react.default.createElement(_reactTwitchEmbed.TwitchEmbed, {
-    channel: participants[channel]
+  }, /*#__PURE__*/_react.default.createElement(_reactTwitchEmbed.TwitchPlayer, {
+    channel: streamer,
+    id: streamer,
+    theme: "dark"
   })), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Row, {
     style: {
       marginTop: '10px'
@@ -73262,7 +73271,8 @@ const NewChallenge = props => {
       type: challengeType,
       endCondition: challengeEndCondition,
       entranceFee: challengeEntranceFee,
-      challengeStatus: 'active'
+      challengeStatus: 'pending',
+      privateOrPublic: publicOrPrivate
     });
   };
 
@@ -73305,6 +73315,7 @@ const NewChallenge = props => {
       return alert('I mean you must know someone to play with you');
     }
 
+    console.log(Title);
     await window.contract.addToOwnerMap({
       title: Title
     });
@@ -73360,7 +73371,7 @@ const NewChallenge = props => {
     ref: challengeRef,
     onChange: () => changeGameSetting(challengeRef.current.value),
     as: "select"
-  }, /*#__PURE__*/_react.default.createElement("option", null, "Solo Kills"), /*#__PURE__*/_react.default.createElement("option", null, "Victories"), /*#__PURE__*/_react.default.createElement("option", null, "Medals"))), gameSetting === "Kill" ? /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Group, null, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Label, null, "Kills to Win"), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Control, {
+  }, /*#__PURE__*/_react.default.createElement("option", null, "Solo Kills"), /*#__PURE__*/_react.default.createElement("option", null, "Victories"), /*#__PURE__*/_react.default.createElement("option", null, "Medals"), /*#__PURE__*/_react.default.createElement("option", null, "eliminations"))), gameSetting === "Kill" ? /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Group, null, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Label, null, "Kills to Win"), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Control, {
     onChange: () => {
       changeDateValue(pointRef.current.value);
     },
@@ -73375,6 +73386,13 @@ const NewChallenge = props => {
     type: "text",
     placeholder: "Enter Value"
   })) : gameSetting === "Medals" ? /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Group, null, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Label, null, "Medals to Win"), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Control, {
+    onChange: () => {
+      changeDateValue(pointRef.current.value);
+    },
+    ref: pointRef,
+    type: "text",
+    placeholder: "Enter Value"
+  })) : gameSetting === "eliminations" ? /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Group, null, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Label, null, "Eliminations to Win"), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Form.Control, {
     onChange: () => {
       changeDateValue(pointRef.current.value);
     },
@@ -73431,7 +73449,7 @@ const NewChallenge = props => {
     onClick: () => {
       sendToBlockChain();
     }
-  }, "Submit"))))));
+  }, "Submit"), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Button, null, " Send to User "), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Button, null, "Send to Contract"))))));
 };
 
 var _default = NewChallenge;
@@ -73478,13 +73496,21 @@ function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 const MyChallenges = props => {
-  // Public Challengengs 
+  // Participating Challengengs 
   const [challengeList, changeChallengeList] = (0, _react.useState)([]);
-  const [challengeDetails, changeChallengeDetails] = (0, _react.useState)([]); //Owners Challenges 
+  const [challengeDetails, changeChallengeDetails] = (0, _react.useState)([]);
+  const [getStatusList, changeStatusList] = (0, _react.useState)([]);
+  const [privateOrPublicList, changePrivatOrPublicList] = (0, _react.useState)([]);
+  const [challengeFees, changeChallengeFees] = (0, _react.useState)([]);
+  const [acceptedChallenges, changeAcceptedChallenges] = (0, _react.useState)([]); //Owners Challenges 
 
   const [ownersChallengeList, changeOwnersChallengeList] = (0, _react.useState)([]);
   const [ownerChallengeDetails, changeOwnerChallengeDetails] = (0, _react.useState)([]);
   const [getOwnerWinner, changeGetOwnerWinners] = (0, _react.useState)([]);
+  const [getOwnerChallengeEndConditions, changeOwnerEndConditions] = (0, _react.useState)([]);
+  const [ownerType, changeOwnerType] = (0, _react.useState)([]);
+  const [ownerPrize, changeOwnerPrize] = (0, _react.useState)([]);
+  const [numberOfParticipants, changeNumberOfParticipants] = (0, _react.useState)([]);
   (0, _react.useEffect)(() => {
     const getChallengeList = async () => {
       let challengeNames = await window.contract.getChallengerChallenges({
@@ -73500,18 +73526,40 @@ const MyChallenges = props => {
       let challengeNames = await window.contract.getChallengerChallenges({
         challenger: window.accountId
       });
-      let challengeDetails1 = [];
+      let challengeDetailsStore = [];
+      let statusList = [];
+      let pOrPList = [];
+      let entranceFees = [];
+      let acceptedChallengesList = [];
 
       for (const x of challengeNames) {
         let details = await window.contract.getChallengeDetails({
           title: x
         });
+        let participantList = await window.contract.getParticipantList({
+          title: x
+        });
+        let statusListFromChain = await window.contract.getParticipantStatus({
+          title: x
+        });
+        let userIndex = participantList.indexOf(window.accountId);
+        let acceptedChallengeStatus = await window.contract.checkAcceptedChallenges({
+          name: window.accountId,
+          title: x
+        });
+        challengeDetailsStore.push(details[3]);
+        pOrPList.push(details[4]);
+        entranceFees.push(details[2]);
+        statusList.push(statusListFromChain[userIndex]);
+        acceptedChallengesList.push(acceptedChallengeStatus);
         console.log(details);
-        challengeDetails1.push(details[3]);
       }
 
-      console.log(challengeDetails1);
-      changeChallengeDetails(challengeDetails1);
+      changeChallengeDetails(challengeDetailsStore);
+      changePrivatOrPublicList(pOrPList);
+      changeStatusList(statusList);
+      changeChallengeFees(entranceFees);
+      changeAcceptedChallenges(acceptedChallengesList);
     };
 
     getDetails();
@@ -73523,22 +73571,124 @@ const MyChallenges = props => {
       });
       let ownerChallengeInfo = [];
       let ownerWinnersList = [];
+      let ownerChallengeEndConditions = [];
+      let ownerChallengeType = [];
+      let ownerPrizeList = [];
+      let ownerChallengeNumbers = [];
       changeOwnersChallengeList(ownerChallengeNames);
 
       for (const y of ownerChallengeNames) {
         let ownerDetails = await window.contract.getChallengeDetails({
           title: y
         });
+        let escrowValue = await window.contract.getEscrowAccountVal({
+          title: y
+        });
+        let ChallengeNumber = await window.contract.getParticipantCount({
+          title: y
+        });
         ownerChallengeInfo.push(ownerDetails[3]);
         ownerWinnersList.push(ownerDetails[4]);
+        ownerChallengeEndConditions.push(ownerDetails[1]);
+        ownerChallengeType.push(ownerDetails[0]);
+        ownerPrizeList.push(escrowValue);
+        ownerChallengeNumbers.push(ChallengeNumber);
       }
 
-      console.log(ownerChallengeInfo);
       changeOwnerChallengeDetails(ownerChallengeInfo);
+      changeOwnerEndConditions(ownerChallengeEndConditions);
+      changeOwnerType(ownerChallengeType);
+      changeOwnerPrize(ownerPrizeList);
+      changeNumberOfParticipants(ownerChallengeNumbers);
     };
 
     getOwnerChallengeList();
   }, []);
+
+  const deleteChallenge = async challengetitle => {
+    console.log('deleting' + challengetitle);
+    await window.contract.cancelChallenge({
+      title: challengetitle
+    });
+  };
+
+  const acceptChallenge = async (title, entranceFeeAmount) => {
+    console.log(typeof entranceFeeAmount);
+    console.log('accepting challenge:' + title);
+    console.log('sending' + entranceFeeAmount + 'to escrow account to hold until challenge concludes');
+    console.log('sending Money to the Escrow Account');
+    console.log(window.utils.format.parseNearAmount(entranceFeeAmount) + 'NEAR');
+    await window.account.sendMoney(props.escrow, window.utils.format.parseNearAmount(entranceFeeAmount));
+    await window.contract.addToEscrowAccount({
+      title: title,
+      amount: Number(entranceFeeAmount)
+    });
+    await window.contract.addToAcceptedChallenges({
+      title: title
+    });
+    await window.contract.addToParticipantCount({
+      title: title
+    });
+    alert('Money Sent! Challenge Accepted ');
+  };
+
+  const startChallengeButton = async (cTitle, cType, cEndCondition) => {
+    console.log(cType); //export function startChallenge(title:string,endCondition:i32,startStatus:i32[],participants:string[]):void{
+    // step one get the initial values for the type of challenge
+    // get participant list
+
+    let cParticipants = await window.contract.getParticipantList({
+      title: cTitle
+    }); // Now get a list of battle tags 
+
+    let startingScore = []; // build start stat array 
+
+    for (let i = 0; i < cParticipants.length; i++) {
+      let startScore = 0;
+      let battleTag = await window.contract.getBattleTags({
+        name: cParticipants[i]
+      });
+      console.log(cParticipants[i]);
+      await fetch(`https://ovrstat.com/stats/pc/${battleTag}`).then(res => res.json()).then(res => {
+        startScore = res.quickPlayStats.careerStats.allHeroes.combat[cType];
+      });
+      console.log(typeof startScore);
+      startingScore.push(startScore);
+    }
+
+    let getStatuses = await window.contract.getParticipantStatus({
+      title: cTitle
+    });
+    let currStat = [];
+
+    for (let i = 0; i < getStatuses.length; i++) {
+      console.log(getStatuses);
+      currStat.push('active');
+    }
+
+    console.log(currStat);
+    await window.contract.updateParticipantStatus({
+      title: cTitle,
+      status: currStat
+    });
+    await window.contract.activateChallenge({
+      title: cTitle
+    }); // now that we have the battle tags we need to build the starting value array 
+    // after the starting value array build out the function 
+    //export function startChallenge(title:string,endCondition:i32,startStatus:i32[],participants:string[]):void{
+    // update the challenge status
+
+    console.log('starting score is:');
+    console.log(startingScore);
+    await window.contract.startChallenge({
+      title: cTitle,
+      endCondition: Number(cEndCondition),
+      startStatus: startingScore,
+      participants: cParticipants
+    });
+    console.log('challenge Started');
+  };
+
   return /*#__PURE__*/_react.default.createElement(_reactBootstrap.Container, null, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Row, {
     className: "d-flex justify-content-center"
   }, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Table, {
@@ -73551,15 +73701,31 @@ const MyChallenges = props => {
     hover: true,
     variant: "dark"
   }, /*#__PURE__*/_react.default.createElement("thead", null, /*#__PURE__*/_react.default.createElement("th", {
-    colSpan: 4
+    colSpan: 6
   }, /*#__PURE__*/_react.default.createElement("div", {
     style: {
       width: '100%',
       display: 'flex',
       justifyContent: 'center'
     }
-  }, "Challenges The User Is Participating In")), /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "#"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Name"), /*#__PURE__*/_react.default.createElement("th", null, " Challenge Status"))), /*#__PURE__*/_react.default.createElement("tbody", null, challengeList.map((x, index) => {
-    return /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("td", null, index), /*#__PURE__*/_react.default.createElement("td", null, x), /*#__PURE__*/_react.default.createElement("td", null, challengeDetails[index]));
+  }, "Challenges The User Is Participating In")), /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "#"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Name"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Status"), /*#__PURE__*/_react.default.createElement("th", null, "Private or Public"), /*#__PURE__*/_react.default.createElement("th", null, "Entrance Fee"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Response"))), /*#__PURE__*/_react.default.createElement("tbody", null, challengeList.map((x, index) => {
+    return /*#__PURE__*/_react.default.createElement("tr", {
+      key: index
+    }, /*#__PURE__*/_react.default.createElement("td", null, index), /*#__PURE__*/_react.default.createElement("td", null, x), /*#__PURE__*/_react.default.createElement("td", null, challengeDetails[index]), /*#__PURE__*/_react.default.createElement("td", null, privateOrPublicList[index]), /*#__PURE__*/_react.default.createElement("td", null, challengeFees[index] ? challengeFees[index] : '--', " Near"), console.log(getStatusList[index]), /*#__PURE__*/_react.default.createElement("td", {
+      className: "d-flex justify-content-center"
+    }, getStatusList[index] === undefined ? 'N/A' : getStatusList[index] === 'pending' ? !acceptedChallenges[index] ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, {
+      className: "d-flex justify-content-center"
+    }, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Button, {
+      onClick: () => acceptChallenge(x, challengeFees[index]),
+      variant: "primary"
+    }, "Enter!"), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Button, {
+      onClick: async () => {
+        window.contract.removeFromChallengerList({
+          title: x
+        });
+      },
+      variant: "danger"
+    }, "Reject")) : 'Challenge Accepted! Entrance Fee Sent' : 'Challenge Started'));
   }))), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Table, {
     style: {
       marginTop: '10%',
@@ -73570,20 +73736,138 @@ const MyChallenges = props => {
     hover: true,
     variant: "dark"
   }, /*#__PURE__*/_react.default.createElement("thead", null, /*#__PURE__*/_react.default.createElement("th", {
-    colSpan: 4
+    colSpan: 7
   }, /*#__PURE__*/_react.default.createElement("div", {
     style: {
       width: '100%',
       display: 'flex',
       justifyContent: 'center'
     }
-  }, "Challenges the user Owns")), /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "#"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Name"), /*#__PURE__*/_react.default.createElement("th", null, " Challenge Status"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Winners"))), /*#__PURE__*/_react.default.createElement("tbody", null, ownersChallengeList.map((x, index) => {
-    return /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("td", null, index), /*#__PURE__*/_react.default.createElement("td", null, x), /*#__PURE__*/_react.default.createElement("td", null, ownerChallengeDetails[index]), /*#__PURE__*/_react.default.createElement("td", null, getOwnerWinner[index] === undefined ? 'N/A' : getOwnerWinner[index]));
+  }, "Challenges the user Owns")), /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "#"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Name"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Status"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge End Condition"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Winners"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Start Button"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Prize Total"), /*#__PURE__*/_react.default.createElement("th", null, "Number of Participants"))), /*#__PURE__*/_react.default.createElement("tbody", null, ownersChallengeList.map((x, index) => {
+    return /*#__PURE__*/_react.default.createElement("tr", {
+      key: index
+    }, /*#__PURE__*/_react.default.createElement("td", null, index), /*#__PURE__*/_react.default.createElement("td", null, x), /*#__PURE__*/_react.default.createElement("td", null, ownerChallengeDetails[index]), /*#__PURE__*/_react.default.createElement("td", null, getOwnerChallengeEndConditions[index]), /*#__PURE__*/_react.default.createElement("td", null, getOwnerWinner[index] === undefined ? 'N/A' : getOwnerWinner[index]), /*#__PURE__*/_react.default.createElement("td", {
+      className: "d-flex justify-content-center"
+    }, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Button, {
+      onClick: () => {
+        startChallengeButton(x, ownerType[index], getOwnerChallengeEndConditions[index]);
+      },
+      variant: "success"
+    }, "Begin Challenge"), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Button, {
+      onClick: () => deleteChallenge(x),
+      variant: "danger"
+    }, "Cancel Challenge")), /*#__PURE__*/_react.default.createElement("td", null, ownerPrize[index]), /*#__PURE__*/_react.default.createElement("td", null, numberOfParticipants[index]));
   })))));
 };
 
 MyChallenges.propTypes = {};
 var _default = MyChallenges;
+exports.default = _default;
+},{"react":"../node_modules/react/index.js","prop-types":"../node_modules/prop-types/index.js","react-bootstrap":"../node_modules/react-bootstrap/esm/index.js"}],"Components/TokenManager.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _react = _interopRequireWildcard(require("react"));
+
+var _propTypes = _interopRequireDefault(require("prop-types"));
+
+var _reactBootstrap = require("react-bootstrap");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+const TokenManager = props => {
+  const [currentTokenAmount, changeTokenAmount] = (0, _react.useState)(0);
+  const [challengeNameList, changeChallengeNameList] = (0, _react.useState)([]);
+  const [winnersList, changeWinnersList] = (0, _react.useState)([]);
+  const [entranceFeeList, changeEntranceFeeList] = (0, _react.useState)([]);
+  (0, _react.useEffect)(() => {
+    const getTokens = async () => {
+      let tokenAmount = await window.contract.retreiveTokenAmount({
+        user: window.accountId
+      });
+      changeTokenAmount(tokenAmount);
+    };
+
+    getTokens();
+  }, []);
+  (0, _react.useEffect)(() => {
+    const getDetails = async () => {
+      let challengeNames = await window.contract.getChallengerChallenges({
+        challenger: window.accountId
+      });
+      let challengeDetailsStore = [];
+      let statusList = [];
+      let pOrPList = [];
+      let entranceFees = [];
+      let acceptedChallengesList = [];
+      let challengeWinners = [];
+
+      for (const x of challengeNames) {
+        let getchallengeWinners = await window.contract.getChallengeWinnerName({
+          challengeTitle: x
+        });
+        let details = await window.contract.getChallengeDetails({
+          title: x
+        });
+        let participantList = await window.contract.getParticipantList({
+          title: x
+        });
+        let statusListFromChain = await window.contract.getParticipantStatus({
+          title: x
+        });
+        let userIndex = participantList.indexOf(window.accountId);
+        let acceptedChallengeStatus = await window.contract.checkAcceptedChallenges({
+          name: window.accountId,
+          title: x
+        });
+        challengeWinners.push(getchallengeWinners);
+        challengeDetailsStore.push(details[3]);
+        pOrPList.push(details[4]);
+        entranceFees.push(details[2]);
+        statusList.push(statusListFromChain[userIndex]);
+        acceptedChallengesList.push(acceptedChallengeStatus);
+        console.log(details);
+      }
+
+      changeWinnersList(challengeWinners);
+      changeChallengeNameList(challengeNames);
+      changeEntranceFeeList(entranceFees);
+    };
+
+    getDetails();
+  }, []);
+  return /*#__PURE__*/_react.default.createElement(_reactBootstrap.Container, null, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Row, {
+    className: "justify-content-center d-flex"
+  }, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Card, {
+    style: {
+      marginTop: '10px',
+      width: '18rem'
+    }
+  }, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Card.Body, null, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Card.Title, null, "User's Tokens"), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Card.Text, null, currentTokenAmount), /*#__PURE__*/_react.default.createElement("input", {
+    placeholder: "enter token amount"
+  }), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Button, null, "Submit")))), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Row, null, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Table, {
+    style: {
+      marginTop: '10px'
+    },
+    striped: true,
+    bordered: true,
+    hover: true,
+    variant: "dark"
+  }, /*#__PURE__*/_react.default.createElement("thead", null, /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "#"), /*#__PURE__*/_react.default.createElement("th", null, "Challenge Name"), /*#__PURE__*/_react.default.createElement("th", null, "Entrance Fee"), /*#__PURE__*/_react.default.createElement("th", null, "Winners"), /*#__PURE__*/_react.default.createElement("th", null, "Action"))), /*#__PURE__*/_react.default.createElement("tbody", null, challengeNameList.map((x, index) => {
+    return /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("td", null, index), /*#__PURE__*/_react.default.createElement("td", null, x), /*#__PURE__*/_react.default.createElement("td", null, entranceFeeList[index]), /*#__PURE__*/_react.default.createElement("td", null, winnersList[index]), /*#__PURE__*/_react.default.createElement("td", null, winnersList[index] ? /*#__PURE__*/_react.default.createElement(_reactBootstrap.Button, null, "Send Prize") : 'N/A'));
+  })))));
+};
+
+TokenManager.propTypes = {};
+var _default = TokenManager;
 exports.default = _default;
 },{"react":"../node_modules/react/index.js","prop-types":"../node_modules/prop-types/index.js","react-bootstrap":"../node_modules/react-bootstrap/esm/index.js"}],"App.js":[function(require,module,exports) {
 "use strict";
@@ -73617,6 +73901,8 @@ var _EnterInfo = _interopRequireDefault(require("./Components/EnterInfo"));
 
 var _MyChallenges = _interopRequireDefault(require("./Components/MyChallenges"));
 
+var _TokenManager = _interopRequireDefault(require("./Components/TokenManager"));
+
 var _reactRouterDom = require("react-router-dom");
 
 var _config = _interopRequireDefault(require("./config"));
@@ -73634,26 +73920,16 @@ const {
 } = (0, _config.default)("development" || 'development');
 
 function App() {
-  var date = new Date().getDate(); //To get the Current Date
-
-  var month = new Date().getMonth() + 1; //To get the Current Month
-
-  var year = new Date().getFullYear(); //To get the Current Year
-
-  var hours = new Date().getHours(); //To get the Current Hours
-
-  var min = new Date().getMinutes(); //To get the Current Minutes
-
-  var sec = new Date().getSeconds(); //To get the Current Seconds
-
+  let escrowAccountName = 'overblock.blockheads.testnet';
   console.log('https://ovrstat.com/stats/pc/Viz-1213');
   const titleStyle = {
     color: 'rgb(237, 172, 87)'
   };
   const [containsBattleTag, changeContainsBattleTag] = (0, _react.useState)('loading');
+  const [watchTokenAmount, changeWatchTokenAmount] = (0, _react.useState)(0);
   (0, _react.useEffect)(() => {
     const getData = async () => {
-      const data = await fetch("https://ow-api.com/v1/stats/pc/us/dorgon108-1679/profile").then(res => res.json()).then(res => console.log(res));
+      const data = await fetch("https://ovrstat.com/stats/pc/Viz-1213").then(res => res.json()).then(res => console.log(res));
     };
 
     getData();
@@ -73672,6 +73948,16 @@ function App() {
     };
 
     checkBlockChain();
+  }, []);
+  (0, _react.useEffect)(() => {
+    const getWatchTokens = async () => {
+      let tokenVal = await window.contract.retreiveTokenAmount({
+        user: window.accountId
+      });
+      changeWatchTokenAmount(tokenVal);
+    };
+
+    getWatchTokens();
   }, []);
   return /*#__PURE__*/_react.default.createElement(_reactRouterDom.BrowserRouter, null, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Navbar, {
     collapseOnSelect: true,
@@ -73704,13 +73990,22 @@ function App() {
     }
   }, /*#__PURE__*/_react.default.createElement(_reactRouterDom.Link, {
     to: "/challengeinventory"
-  }, "My Challenges")), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Nav.Link, {
+  }, "Challenge Manager")), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Nav.Item, {
+    style: {
+      color: 'orange',
+      display: 'flex',
+      alignItems: 'center',
+      marginRight: '10px'
+    }
+  }, /*#__PURE__*/_react.default.createElement(_reactRouterDom.Link, {
+    to: "/tokenmanager"
+  }, "Watch Token Amount: ", watchTokenAmount)), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Nav.Link, {
     onClick: window.accountId === '' ? _utils.login : _utils.logout
   }, window.accountId === '' ? 'login' : window.accountId)))), containsBattleTag === 'loading' ? /*#__PURE__*/_react.default.createElement("p", {
     style: {
       color: 'white'
     }
-  }, "Loading") : containsBattleTag !== 'enterInfo' ? /*#__PURE__*/_react.default.createElement(_EnterInfo.default, null) : /*#__PURE__*/_react.default.createElement(_reactRouterDom.Switch, null, /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
+  }, "Loading") : containsBattleTag === 'enterInfo' ? /*#__PURE__*/_react.default.createElement(_EnterInfo.default, null) : /*#__PURE__*/_react.default.createElement(_reactRouterDom.Switch, null, /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
     exact: true,
     path: "/"
   }, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Container, null, /*#__PURE__*/_react.default.createElement(_reactBootstrap.Col, null, /*#__PURE__*/_react.default.createElement(_TwitchViewHome.default, null)), /*#__PURE__*/_react.default.createElement(_reactBootstrap.Col, null, /*#__PURE__*/_react.default.createElement(_MatchView.default, null)))), /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
@@ -73720,11 +74015,16 @@ function App() {
     exact: true,
     path: "/newChallenge"
   }, /*#__PURE__*/_react.default.createElement(_NewChallenge.default, null)), /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
-    exat: true,
+    exact: true,
     path: "/challengeinventory"
-  }, /*#__PURE__*/_react.default.createElement(_MyChallenges.default, null))));
+  }, /*#__PURE__*/_react.default.createElement(_MyChallenges.default, {
+    escrow: escrowAccountName
+  })), /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
+    exact: true,
+    path: "/tokenmanager"
+  }, /*#__PURE__*/_react.default.createElement(_TokenManager.default, null))));
 }
-},{"regenerator-runtime/runtime":"../node_modules/regenerator-runtime/runtime.js","react":"../node_modules/react/index.js","./utils":"utils.js","./global.css":"global.css","./scss/AppStyles.scss":"scss/AppStyles.scss","react-bootstrap":"../node_modules/react-bootstrap/esm/index.js","./Components/MatchView":"Components/MatchView.js","./Components/TwitchViewHome":"Components/TwitchViewHome.js","./Components/CreateMatch":"Components/CreateMatch.js","./Components/NewChallenge":"Components/NewChallenge.js","./Components/EnterInfo":"Components/EnterInfo.js","./Components/MyChallenges":"Components/MyChallenges.js","react-router-dom":"../node_modules/react-router-dom/esm/react-router-dom.js","./config":"config.js","./Components/PlayerView":"Components/PlayerView.js"}],"index.js":[function(require,module,exports) {
+},{"regenerator-runtime/runtime":"../node_modules/regenerator-runtime/runtime.js","react":"../node_modules/react/index.js","./utils":"utils.js","./global.css":"global.css","./scss/AppStyles.scss":"scss/AppStyles.scss","react-bootstrap":"../node_modules/react-bootstrap/esm/index.js","./Components/MatchView":"Components/MatchView.js","./Components/TwitchViewHome":"Components/TwitchViewHome.js","./Components/CreateMatch":"Components/CreateMatch.js","./Components/NewChallenge":"Components/NewChallenge.js","./Components/EnterInfo":"Components/EnterInfo.js","./Components/MyChallenges":"Components/MyChallenges.js","./Components/TokenManager":"Components/TokenManager.js","react-router-dom":"../node_modules/react-router-dom/esm/react-router-dom.js","./config":"config.js","./Components/PlayerView":"Components/PlayerView.js"}],"index.js":[function(require,module,exports) {
 "use strict";
 
 var _react = _interopRequireDefault(require("react"));
@@ -73768,7 +74068,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57115" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56493" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

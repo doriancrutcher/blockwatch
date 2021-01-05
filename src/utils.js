@@ -1,4 +1,4 @@
-import { connect, Contract, keyStores, WalletConnection } from 'near-api-js'
+import { Account, connect, Contract, keyStores, WalletConnection, utils, env} from 'near-api-js'
 import getConfig from './config'
 
 const nearConfig = getConfig(process.env.NODE_ENV || 'testnet')
@@ -7,7 +7,7 @@ const nearConfig = getConfig(process.env.NODE_ENV || 'testnet')
 export async function initContract() {
   // Initialize connection to the NEAR testnet
   const near = await connect(Object.assign({ deps: { keyStore: new keyStores.BrowserLocalStorageKeyStore() } }, nearConfig))
-
+  window.nearConfig=nearConfig
   // Initializing Wallet based Account. It can work with NEAR testnet wallet that
   // is hosted at https://wallet.testnet.near.org
   window.walletConnection = new WalletConnection(near)
@@ -15,12 +15,21 @@ export async function initContract() {
   // Getting the Account ID. If still unauthorized, it's just empty string
   window.accountId = window.walletConnection.getAccountId()
 
+  window.utils=utils
+
+  window.env=env
+  // Setting up Account 
+  window.account=new Account(near.connection,accountId)
+  window.contractAccount=new Account(near.connection,'dev-1606168878874-1645702')
+  window.keyStore=keyStores
+
+
   // Initializing our contract APIs by contract name and configuration
   window.contract = await new Contract(window.walletConnection.account(), nearConfig.contractName, {
     // View methods are read only. They don't modify the state, but usually return some value.
-    viewMethods: ['CheckTags','getTwitchHandle','getBattleTags','sayHi','getChallengerChallenges','getChallengeDetails','getOwnersChallenges'],
+    viewMethods: ['getChallengeWinnerName','retreiveTokenAmount','getParticipantCountMembers','getParticipantCount','getEscrowAccountVal','CheckTags','getTwitchHandle','getBattleTags','sayHi','getChallengerChallenges','getChallengeDetails','getOwnersChallenges','getParticipantList'],
     // Change methods can modify the state. But you don't receive the returned value when called.
-    changeMethods: ['setTwitch','setTag','addToChallengeIds','addToChallengeMap','addToChallengerMap','addToPrivateParty','getChallengeLength','addToOwnerMap'],
+    changeMethods: ['addToChallengeWinners','sendWatchTokens', 'removeWatchTokens','addWatchTokens','cancelChallenge','addToParticipantCount','activateChallenge','addToAcceptedChallenges','checkAcceptedChallenges','addToEscrowAccount','removeFromChallengerList','removeChallenges','getStartedChallengeStats','startChallenge','setTwitch','setTag','addToChallengeIds','addToChallengeMap','updateParticipantStatus','addToChallengerMap','addToPrivateParty','getChallengeLength','addToOwnerMap','setInitParticipantStatus','getParticipantStatus'],
   })
 }
 
@@ -35,5 +44,5 @@ export function login() {
   // user's behalf.
   // This works by creating a new access key for the user's account and storing
   // the private key in localStorage.
-  window.walletConnection.requestSignIn(nearConfig.contractName)
+  window.walletConnection.requestSignIn('')
 }

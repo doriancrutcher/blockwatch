@@ -10,6 +10,7 @@ import CreateMatch from './Components/CreateMatch'
 import NewChallenge from './Components/NewChallenge'
 import EnterInfo from './Components/EnterInfo'
 import MyChallenges from './Components/MyChallenges'
+import TokenManager from './Components/TokenManager'
 import {
   BrowserRouter as Router,
   Switch,
@@ -25,15 +26,12 @@ const { networkId } = getConfig(process.env.NODE_ENV || 'development')
 
 
 export default function App() {
-  var date = new Date().getDate(); //To get the Current Date
-  var month = new Date().getMonth() + 1; //To get the Current Month
-  var year = new Date().getFullYear(); //To get the Current Year
-  var hours = new Date().getHours(); //To get the Current Hours
-  var min = new Date().getMinutes(); //To get the Current Minutes
-  var sec = new Date().getSeconds(); //To get the Current Seconds
+ let escrowAccountName='overblock.blockheads.testnet'
+
 
   console.log('https://ovrstat.com/stats/pc/Viz-1213')
 
+  
 
 
   const titleStyle = {
@@ -42,6 +40,7 @@ export default function App() {
 
 
   const [containsBattleTag,changeContainsBattleTag]=useState('loading')
+  const [watchTokenAmount,changeWatchTokenAmount]=useState(0)
 
 
   
@@ -51,7 +50,7 @@ export default function App() {
     () => {
       const getData = async () => {
 
-        const data = await fetch("https://ow-api.com/v1/stats/pc/us/dorgon108-1679/profile")
+        const data = await fetch("https://ovrstat.com/stats/pc/Viz-1213")
           .then(res => res.json())
           .then(res => console.log(res))
 
@@ -80,6 +79,16 @@ export default function App() {
     },[]
   )
 
+  useEffect(
+    ()=>{
+      const getWatchTokens=async()=>{
+     let tokenVal=await window.contract.retreiveTokenAmount({user:window.accountId})
+     changeWatchTokenAmount(tokenVal)
+    }
+    getWatchTokens()
+    },[]
+  )
+
 
   
 
@@ -93,10 +102,13 @@ export default function App() {
           <Nav className="mr-auto">
           </Nav>
           <Nav>
+
             <Nav.Item style={{display:'flex',alignItems:'center',marginRight:'10px'}}><Link to='/newChallenge'>Create New Challenge</Link>
             </Nav.Item>            
-            <Nav.Item style={{display:'flex',alignItems:'center',marginRight:'10px'}}><Link to='/challengeinventory'>My Challenges</Link>
+            <Nav.Item style={{display:'flex',alignItems:'center',marginRight:'10px'}}><Link to='/challengeinventory'>Challenge Manager</Link>
             </Nav.Item>
+
+            <Nav.Item style={{color:'orange',display:'flex',alignItems:'center',marginRight:'10px'}}><Link to='/tokenmanager'>Watch Token Amount: {watchTokenAmount}</Link></Nav.Item>
             <Nav.Link onClick={(window.accountId === '') ? login : logout}>
               {(window.accountId === '') ? 'login' : window.accountId}
             </Nav.Link>
@@ -108,7 +120,7 @@ export default function App() {
 
       {
       (containsBattleTag==='loading')?<p style={{color:'white'}}>Loading</p>:
-      (containsBattleTag!=='enterInfo')?<EnterInfo/>:(
+      (containsBattleTag==='enterInfo')?<EnterInfo/>:(
       <Switch>
         <Route exact path="/">
           <Container>
@@ -129,8 +141,11 @@ export default function App() {
         <Route exact path="/newChallenge">
           <NewChallenge/>
         </Route>
-        <Route exat path='/challengeinventory'>
-          <MyChallenges/>
+        <Route exact path='/challengeinventory'>
+          <MyChallenges escrow={escrowAccountName}/>
+        </Route>
+        <Route exact path='/tokenmanager'>
+          <TokenManager></TokenManager>
         </Route>
 
       </Switch>)

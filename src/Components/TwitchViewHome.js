@@ -34,7 +34,7 @@ const TwitchViewHome = props => {
     const [games, setGames] = useState();
     const [participants, changeParticipants] = useState(['emongg', 'jake_ow'])
     const [streamer, changeSteamer] = useState(participants[0])
-    const [channel,changeChannel]=useState(0)
+    const [channel,changeChannel]=useState(1)
     
     const streams=participants.map((x,index)=>{
         return(
@@ -72,7 +72,11 @@ const TwitchViewHome = props => {
                 <Container>
                     <Row className="d-flex justify-content-center"><h1>Featured Match</h1></Row>
                     <Row className="d-flex justify-content-center">
-                        <TwitchEmbed channel={participants[channel]}/>
+                    <TwitchPlayer
+                channel={streamer}
+                id={streamer}
+                theme="dark"
+            />
                     </Row>
                     <Row style={{ marginTop: '10px' }} className="d-flex justify-content-center">
 
